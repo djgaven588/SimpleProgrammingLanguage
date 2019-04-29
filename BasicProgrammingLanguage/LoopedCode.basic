@@ -1,0 +1,15 @@
+﻿if $Increment == null
+   $Increment = 0
+end
+if $Direction == null
+   $Direction = 1
+end
+
+if $Increment >= 10000
+   $Direction = -1
+else if $Increment <= 0
+   $Direction = 1
+end
+print $Increment
+//$Direction = $Direction * 50
+$Increment = $Increment + 50;

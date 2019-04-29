@@ -1,0 +1,21 @@
+﻿if $Run == null
+   $Run = "Yes"
+end
+loadFile "LoopedCode.basic" $LoopedCode
+if $LoopedCode == ""
+   print "Tried to run code with length of 0 exiting program..."
+   $Run = "No"
+end
+
+loadFile "Code.basic" $Loop
+if $Loop == ""
+   print "Tried to run code with length of 0 exiting program..."
+   $Run = "No"
+end
+
+if $Run == "Yes"
+   runCode $LoopedCode
+   runCode $Loop
+else
+   print "Program complete!"
+end

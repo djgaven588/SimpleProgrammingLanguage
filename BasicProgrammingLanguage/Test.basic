@@ -1,0 +1,9 @@
+﻿print "1"
+print 1
+print 1+1
+$TestVar = "test"
+print $TestVar
+$T = $TestVar
+$TestVar = 2 + 2 * 3
+print $T
+print $TestVar
