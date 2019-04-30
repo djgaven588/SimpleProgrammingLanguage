@@ -23,6 +23,11 @@ namespace BasicProgrammingLanguageMk2
             initialized = true;
             keywords.Add("using");
             keywords.Add("string");
+            keywords.Add("if");
+            keywords.Add("else");
+            keywords.Add("for");
+            keywords.Add("while");
+            keywords.Add("new");
         }
     }
 
