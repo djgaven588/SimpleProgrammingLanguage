@@ -91,6 +91,8 @@ namespace BasicProgrammingLanguageMk2
                 Output.WriteDebug($"{String.Format("{0, " + extraSpaces + ":#0}", index)} - {token.action.ToString()}: {token.data}");
                 index++;
             }
+
+            Interpreter.BeginInterpret(state.tokens.ToArray());
         }
 
         private static void AddPhraseToken(ref LexState state)
@@ -131,7 +133,6 @@ namespace BasicProgrammingLanguageMk2
             }
 
             state.tokens.Enqueue(new Token(LexState.Action.SpecialPhrase, state.currentPhrase));
-            //Output.WriteError($"Line {state.currentLine} has the phrase '{state.currentPhrase.ToString()}' which is invalid!");
             state.currentPhrase = "";
         }
     }
