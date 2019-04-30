@@ -54,6 +54,27 @@ namespace BasicProgrammingLanguageMk2
             keywords.Add("/");
             keywords.Add("%");
             keywords.Add("^");
+        }
+    }
+
+    public class Modify
+    {
+        private static bool initialized = false;
+        private static HashSet<string> keywords = new HashSet<string>();
+
+
+        public static bool IsModification(string phrase)
+        {
+            if (!initialized)
+                Initialize();
+
+            return keywords.Contains(phrase);
+        }
+
+        private static void Initialize()
+        {
+            initialized = true;
+            keywords.Add("=");
             keywords.Add("+=");
             keywords.Add("-=");
             keywords.Add("*=");

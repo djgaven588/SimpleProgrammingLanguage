@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Text;
 
 namespace BasicProgrammingLanguageMk2
@@ -13,14 +14,49 @@ namespace BasicProgrammingLanguageMk2
 
             for (int i = 0; i < state.charLength; i++)
             {
-                if (state.currentChar == '	' || state.currentChar == ' ')
+                if (state.currentChar == Static.tab || state.currentChar == Static.space)
                 {
                     AddPhraseToken(ref state);
                 }
                 else if (state.currentChar == Static.lineFeed || state.currentChar == Static.carriageReturn)
                 {
                     state.currentLine++;
+                    if (state.commentSingleLine)
+                    {
+                        state.commentStart = -1;
+                    }
                     AddPhraseToken(ref state);
+                }
+                else if (state.commentStart != -1)
+                {
+                    if (state.commentSingleLine)
+                    {
+                        state.currentPhrase = "";
+                    }
+
+                    if (state.commentSingleLine != true && state.currentPhrase.Length >= 2 && state.currentPhrase.Substring(state.currentPhrase.Length - 2, 2) == Static.multiLineCommentEnd)
+                    {
+                        state.commentStart = -1;
+                        state.currentPhrase = state.currentChar.ToString();
+                    }
+                    else
+                    {
+                        state.currentPhrase += state.currentChar;
+                    }
+                }
+                else if (state.currentPhrase == Static.singleLineComment)
+                {
+                    state.commentStart = state.currentLine;
+                    state.commentSingleLine = true;
+                }
+                else if (state.currentPhrase == Static.multiLineCommentStart)
+                {
+                    state.commentStart = state.currentLine;
+                    state.commentSingleLine = false;
+                }
+                else if (state.currentChar == Static.property)
+                {
+                    state.tokens.Enqueue(new Token(LexState.Action.Property, ""));
                 }
                 else if (state.currentChar == Static.endOfStatement)
                 {
@@ -82,6 +118,14 @@ namespace BasicProgrammingLanguageMk2
             if (isValid)
             {
                 state.tokens.Enqueue(new Token(LexState.Action.Comparison, state.currentPhrase));
+                state.currentPhrase = "";
+                return;
+            }
+
+            isValid = Modify.IsModification(state.currentPhrase);
+            if (isValid)
+            {
+                state.tokens.Enqueue(new Token(LexState.Action.Modification, state.currentPhrase));
                 state.currentPhrase = "";
                 return;
             }

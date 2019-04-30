@@ -12,7 +12,9 @@ namespace BasicProgrammingLanguageMk2
             Operation,
             Comparison,
             EndStatement,
-            SpecialPhrase
+            SpecialPhrase,
+            Modification,
+            Property
         }
 
         public Queue<Token> tokens = new Queue<Token>();
@@ -24,6 +26,9 @@ namespace BasicProgrammingLanguageMk2
         public int currentIndex = 0;
         public string currentPhrase = "";
         public int currentLine = 0;
+
+        public int commentStart = -1;
+        public bool commentSingleLine = false;
 
         public LexState(char[] chars)
         {
