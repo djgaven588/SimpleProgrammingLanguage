@@ -1,21 +1,5 @@
-﻿using System;//System;
-using System.Task.Something;
-string myString = /*"Hello!"*/"Hello world!";
+﻿using System;
 
-+
--
-/
-*
-%
+Console.Write("Hello world!");
 
-+=
--=
-/=
-*=
-%=
-
-==
->
-<
-<=
->=
+string myString = "Hello world!";

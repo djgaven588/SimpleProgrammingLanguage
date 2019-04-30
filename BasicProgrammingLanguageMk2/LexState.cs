@@ -14,7 +14,10 @@ namespace BasicProgrammingLanguageMk2
             EndStatement,
             SpecialPhrase,
             Modification,
-            Property
+            Property,
+            String,
+            ParametersOpen,
+            ParametersClose
         }
 
         public Queue<Token> tokens = new Queue<Token>();
@@ -29,6 +32,9 @@ namespace BasicProgrammingLanguageMk2
 
         public int commentStart = -1;
         public bool commentSingleLine = false;
+
+        public bool workingOnString = false;
+        public bool stringStartedWithType1 = true;
 
         public LexState(char[] chars)
         {

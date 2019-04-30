@@ -14,7 +14,7 @@ namespace BasicProgrammingLanguageMk2
 
             for (int i = 0; i < state.charLength; i++)
             {
-                if (state.currentChar == Static.tab || state.currentChar == Static.space)
+                if ((state.currentChar == Static.tab || state.currentChar == Static.space) && !state.workingOnString)
                 {
                     AddPhraseToken(ref state);
                 }
@@ -33,11 +33,25 @@ namespace BasicProgrammingLanguageMk2
                     {
                         state.currentPhrase = "";
                     }
-
-                    if (state.commentSingleLine != true && state.currentPhrase.Length >= 2 && state.currentPhrase.Substring(state.currentPhrase.Length - 2, 2) == Static.multiLineCommentEnd)
+                    else if (state.commentSingleLine != true && state.currentPhrase.Length >= 2 && state.currentPhrase.Substring(state.currentPhrase.Length - 2, 2) == Static.multiLineCommentEnd)
                     {
                         state.commentStart = -1;
-                        state.currentPhrase = state.currentChar.ToString();
+                        state.currentIndex--;
+                        i--;
+                        state.currentPhrase = "";
+                    }
+                    else
+                    {
+                        state.currentPhrase += state.currentChar;
+                    }
+                }
+                else if (state.workingOnString)
+                {
+                    if ((state.currentChar == Static.startString1 && state.stringStartedWithType1) || (state.currentChar == Static.startString2 && !state.stringStartedWithType1))
+                    {
+                        state.workingOnString = false;
+                        state.tokens.Enqueue(new Token(LexState.Action.String, state.currentPhrase));
+                        state.currentPhrase = "";
                     }
                     else
                     {
@@ -48,20 +62,39 @@ namespace BasicProgrammingLanguageMk2
                 {
                     state.commentStart = state.currentLine;
                     state.commentSingleLine = true;
+                    AddPhraseToken(ref state);
                 }
                 else if (state.currentPhrase == Static.multiLineCommentStart)
                 {
                     state.commentStart = state.currentLine;
                     state.commentSingleLine = false;
+                    AddPhraseToken(ref state);
+                }
+                else if (state.currentChar == Static.startString1 || state.currentChar == Static.startString2)
+                {
+                    state.workingOnString = true;
+                    state.stringStartedWithType1 = (state.currentChar == Static.startString1);
+                    AddPhraseToken(ref state);
                 }
                 else if (state.currentChar == Static.property)
                 {
+                    AddPhraseToken(ref state);
                     state.tokens.Enqueue(new Token(LexState.Action.Property, ""));
                 }
                 else if (state.currentChar == Static.endOfStatement)
                 {
                     AddPhraseToken(ref state);
                     state.tokens.Enqueue(new Token(LexState.Action.EndStatement, ""));
+                }
+                else if (state.currentChar == Static.beginParameters)
+                {
+                    AddPhraseToken(ref state);
+                    state.tokens.Enqueue(new Token(LexState.Action.ParametersOpen, ""));
+                }
+                else if (state.currentChar == Static.endParameters)
+                {
+                    AddPhraseToken(ref state);
+                    state.tokens.Enqueue(new Token(LexState.Action.ParametersClose, ""));
                 }
                 else
                 {

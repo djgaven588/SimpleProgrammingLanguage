@@ -36,9 +36,6 @@ namespace BasicProgrammingLanguageMk2
                     case LexState.Action.Modification:
                         ModificationProcess(tokens[currentIndex].data);
                         break;
-                    case LexState.Action.Property:
-                        PropertyProcess();
-                        break;
                     default:
                         break;
                 }
@@ -59,52 +56,29 @@ namespace BasicProgrammingLanguageMk2
             switch (keyword)
             {
                 case "using":
-                    if (HasRequestedTokens(2))
+                    string find = GetNamespaceOrClass();
+                    if (find == "")
                     {
-                        Token firstPar = tokens[currentIndex + 1];
-                        Token secondPar = tokens[currentIndex + 2];
-
-                        string toUse = "";
-
-                        if (firstPar.action != LexState.Action.SpecialPhrase)
-                        {
-                            Output.WriteError("Special phrase is missing for using!");
-                            return;
-                        }
-
-                        toUse += firstPar.data;
-
-                        if (secondPar.action == LexState.Action.Property)
-                        {
-                            int currentOffset = 3;
-                            while (HasRequestedTokens(1) && (secondPar.action == LexState.Action.Property || secondPar.action == LexState.Action.Keyword))
-                            {
-                                if (secondPar.action == LexState.Action.SpecialPhrase)
-                                {
-                                    toUse += $".{secondPar.data}";
-                                }
-                                secondPar = tokens[currentIndex + currentOffset];
-                                currentOffset++;
-                            }
-                            currentOffset--;
-                            currentIndex += currentOffset;
-                        }
-                        else if (secondPar.action == LexState.Action.EndStatement)
-                        {
-                            currentIndex += 2;
-                        }
-                        else
-                        {
-                            Output.WriteError("Invalid action for using statement token 2");
-                            return;
-                        }
-
-                        Output.WriteDebug($"Included {toUse}");
+                        Output.WriteError("The parameter reguarding the namespace to be included is missing! A previous error indicated this.");
                     }
                     else
                     {
-                        Output.WriteError("Missing required tokens for using!");
-                        return;
+                        Output.WriteDebug($"Included {find}, this has no functionality yet. System is used by default until a proper solution is created.");
+                    }
+                    break;
+                case "string":
+                    if (HasRequestedTokens(1))
+                    {
+                        if (tokens[currentIndex + 1].action == LexState.Action.SpecialPhrase)
+                        {
+                            string variableName = tokens[currentIndex + 1].data;
+                            Output.WriteDebug($"Variable of type 'string' with name '{variableName}' was declared!");
+                            currentIndex++;
+                        }
+                        else
+                        {
+                            Output.WriteError("After keyword 'string', it is expected that a variable name follows.");
+                        }
                     }
                     break;
                 default:
@@ -114,32 +88,95 @@ namespace BasicProgrammingLanguageMk2
 
         private static void OperationProcess(string operation)
         {
-
+            Output.WriteDebug("Operation " + operation);
         }
 
         private static void ComparisonProcess(string comparison)
         {
-
+            Output.WriteDebug("Comparison " + comparison);
         }
 
         private static void EndStatementProcess()
         {
-
+            Output.WriteDebug("End statement");
         }
 
         private static void SpecialPhraseProcess(string phrase)
         {
-
+            string find = GetNamespaceOrClass(false);
+            Output.WriteDebug($"The phrase '{find}' is being treated as a method. Continuing...");
         }
 
         private static void ModificationProcess(string modification)
         {
-
+            Output.WriteDebug("Modification " + modification);
         }
 
-        private static void PropertyProcess()
+        private static string GetNamespaceOrClass(bool start1Ahead = true)
         {
+            if (HasRequestedTokens(2))
+            {
+                Token firstPar = tokens[currentIndex + ((start1Ahead) ? 1 : 0)];
+                Token secondPar = tokens[currentIndex + ((start1Ahead) ? 1 : 0) + 1];
 
+                string toUse = "";
+
+                if (firstPar.action != LexState.Action.SpecialPhrase)
+                {
+                    Output.WriteError("Special phrase is missing!");
+                    return "";
+                }
+
+                toUse += firstPar.data;
+
+                if (secondPar.action == LexState.Action.Property)
+                {
+                    int currentOffset = ((start1Ahead) ? 1 : 0) + 1;
+                    while (HasRequestedTokens(1) && (secondPar.action == LexState.Action.Property || secondPar.action == LexState.Action.SpecialPhrase))
+                    {
+                        currentOffset++;
+                        secondPar = tokens[currentIndex + currentOffset];
+                        if (secondPar.action == LexState.Action.SpecialPhrase)
+                        {
+                            toUse += $".{secondPar.data}";
+                        }
+                    }
+                    currentOffset--;
+                    currentIndex += currentOffset;
+
+                    return toUse;
+                }
+
+                currentIndex += ((start1Ahead) ? 1 : 0);
+
+                return toUse;
+            }
+            else
+            {
+                Output.WriteError("Missing required tokens for using!");
+                return "";
+            }
+        }
+
+        private Token[] GetAllParameters()
+        {
+            if (HasRequestedTokens(1))
+            {
+                if (tokens[currentIndex + 1].action != LexState.Action.ParametersOpen)
+                {
+                    Output.WriteError($"After a function, it is expected that the parameters start symbol '{Static.beginParameters}' be used.");
+                    return null;
+                }
+                else
+                {
+                    //Continue
+                }
+            }
+            else
+            {
+                Output.WriteError($"Code ended before parameters could be found. (End of file?)");
+                return null;
+            }
         }
     }
 }
