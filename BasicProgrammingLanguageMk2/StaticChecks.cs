@@ -109,6 +109,8 @@ namespace BasicProgrammingLanguageMk2
             keywords.Add(">");
             keywords.Add("<=");
             keywords.Add(">=");
+            keywords.Add("||");
+            keywords.Add("&&");
         }
     }
 }

@@ -104,7 +104,21 @@ namespace BasicProgrammingLanguageMk2
         private static void SpecialPhraseProcess(string phrase)
         {
             string find = GetNamespaceOrClass(false);
-            Output.WriteDebug($"The phrase '{find}' is being treated as a method. Continuing...");
+            Token[] parameters = GetAllParameters();
+            if (parameters == null)
+            {
+                //Not a method, but a variable of something.
+                Output.WriteDebug($"The phrase '{find}' is being treated as a name. Continuing...");
+            }
+            else
+            {
+
+                if (find == "Console.Write")
+                {
+                    Output.ProgramOut(parameters[0].data);
+                }
+                Output.WriteDebug($"The phrase '{find}' is being treated as a method. Continuing...");
+            }
         }
 
         private static void ModificationProcess(string modification)
@@ -158,7 +172,7 @@ namespace BasicProgrammingLanguageMk2
             }
         }
 
-        private Token[] GetAllParameters()
+        private static Token[] GetAllParameters()
         {
             if (HasRequestedTokens(1))
             {
@@ -169,7 +183,40 @@ namespace BasicProgrammingLanguageMk2
                 }
                 else
                 {
-                    //Continue
+                    int levelsDeep = 0;
+                    int currentOffset = 1;
+
+                    Token nextToken = tokens[currentIndex + 1];
+                    Queue<Token> tokenQueue = new Queue<Token>();
+
+                    while (HasRequestedTokens(1))
+                    {
+                        currentOffset++;
+                        nextToken = tokens[currentIndex + currentOffset];
+                        if (nextToken.action != LexState.Action.ParametersClose)
+                        {
+                            tokenQueue.Enqueue(nextToken);
+                            if (nextToken.action == LexState.Action.ParametersOpen)
+                            {
+                                levelsDeep++;
+                            }
+                        }
+                        else
+                        {
+                            if (levelsDeep == 0)
+                            {
+                                return tokenQueue.ToArray();
+                            }
+                            else
+                            {
+                                tokenQueue.Enqueue(nextToken);
+                                levelsDeep--;
+                            }
+                        }
+                    }
+
+                    Output.WriteError($"Code ended before the end of the parameters. (End of file?)");
+                    return null;
                 }
             }
             else
