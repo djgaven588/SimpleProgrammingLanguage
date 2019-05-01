@@ -17,7 +17,9 @@ namespace BasicProgrammingLanguageMk2
             Property,
             String,
             ParametersOpen,
-            ParametersClose
+            ParametersClose,
+            MethodOpen,
+            MethodClose
         }
 
         public Queue<Token> tokens = new Queue<Token>();

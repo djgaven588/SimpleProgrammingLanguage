@@ -96,6 +96,16 @@ namespace BasicProgrammingLanguageMk2
                     AddPhraseToken(ref state);
                     state.tokens.Enqueue(new Token(LexState.Action.ParametersClose, ""));
                 }
+                else if (state.currentChar == Static.beginBlock)
+                {
+                    AddPhraseToken(ref state);
+                    state.tokens.Enqueue(new Token(LexState.Action.MethodOpen, ""));
+                }
+                else if (state.currentChar == Static.endBlock)
+                {
+                    AddPhraseToken(ref state);
+                    state.tokens.Enqueue(new Token(LexState.Action.MethodClose, ""));
+                }
                 else
                 {
                     state.currentPhrase += state.currentChar;

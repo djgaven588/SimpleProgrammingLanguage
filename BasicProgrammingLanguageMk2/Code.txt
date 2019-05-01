@@ -1,5 +1,8 @@
 ﻿using System;
 
-Console.Write("Hello world!");
+public void WriteToConsole(string input)
+{
+	Console.Write(input);
+}
 
-string myString = "Hello world!";
+WriteToConsole("Hello world!");

@@ -28,6 +28,10 @@ namespace BasicProgrammingLanguageMk2
             keywords.Add("for");
             keywords.Add("while");
             keywords.Add("new");
+            keywords.Add("public");
+            keywords.Add("private");
+            keywords.Add("protected");
+            keywords.Add("void");
         }
     }
 

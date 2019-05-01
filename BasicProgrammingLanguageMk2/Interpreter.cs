@@ -9,6 +9,7 @@ namespace BasicProgrammingLanguageMk2
 
         private static int currentIndex;
         private static Token[] tokens;
+        private static Dictionary<string, MethodDefine> definedMethods = new Dictionary<string, MethodDefine>();
 
         public static void BeginInterpret(Token[] tokenIn)
         {
@@ -112,12 +113,54 @@ namespace BasicProgrammingLanguageMk2
             }
             else
             {
-
-                if (find == "Console.Write")
+                if (IsMethodDeclare())
                 {
-                    Output.ProgramOut(parameters[0].data);
+                    definedMethods.Add(find, new MethodDefine() { methodContents = GetMethodTokens(), paremeters = parameters });
+                    Output.WriteDebug($"The phrase '{find}' is being treated as declaring a method. Not implemented");
                 }
-                Output.WriteDebug($"The phrase '{find}' is being treated as a method. Continuing...");
+                else
+                {
+                    Output.WriteDebug($"The phrase '{find}' is being treated as a method. Continuing...");
+                    if (find == "Console.Write")
+                    {
+                        Output.ProgramOut(parameters[0].data);
+                    }
+                    else if (definedMethods.ContainsKey(find))
+                    {
+                        MethodDefine method = definedMethods[find];
+
+                        bool lookingForType = true;
+                        for (int i = 0; i < method.paremeters.Length; i++)
+                        {
+                            if (lookingForType)
+                            {
+                                if (parameters[i / 2].action.ToString().ToLower() != method.paremeters[i].data.ToLower())
+                                {
+                                    Output.WriteError($"Parameter #'{i / 2}' is not the type specified by the called method. Was expecting '{method.paremeters[i].data.ToLower()}'");
+                                    return;
+                                }
+                            }
+                            else
+                            {
+                                //Define variable in scope of method
+                                Output.WriteDebug("NOT IMPLEMENTED: Method call needs to define variables in method scope.");
+                            }
+                            lookingForType = !lookingForType;
+                        }
+
+                        int previousIndex = currentIndex;
+                        Token[] previousTokens = tokens;
+
+                        BeginInterpret(method.methodContents);
+
+                        currentIndex = previousIndex;
+                        tokens = previousTokens;
+                    }
+                    else
+                    {
+                        Output.WriteError($"The method '{find}' is not defined! (Method defined after called?)");
+                    }
+                }
             }
         }
 
@@ -205,6 +248,7 @@ namespace BasicProgrammingLanguageMk2
                         {
                             if (levelsDeep == 0)
                             {
+                                currentIndex += currentOffset;
                                 return tokenQueue.ToArray();
                             }
                             else
@@ -222,6 +266,81 @@ namespace BasicProgrammingLanguageMk2
             else
             {
                 Output.WriteError($"Code ended before parameters could be found. (End of file?)");
+                return null;
+            }
+        }
+
+        private static bool IsMethodDeclare()
+        {
+            if (HasRequestedTokens(1))
+            {
+                if (tokens[currentIndex + 1].action == LexState.Action.MethodOpen)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                Output.WriteError($"Code ended before check for method open could be found. (End of file?)");
+                return false;
+            }
+        }
+
+        private static Token[] GetMethodTokens()
+        {
+            if (HasRequestedTokens(1))
+            {
+                if (tokens[currentIndex + 1].action != LexState.Action.MethodOpen)
+                {
+                    Output.WriteError($"After a function declaration, it is expected that the block is defined using '{Static.beginBlock}', and closed using '{Static.endBlock}'.");
+                    return null;
+                }
+                else
+                {
+                    int levelsDeep = 0;
+                    int currentOffset = 1;
+
+                    Token nextToken = tokens[currentIndex + 1];
+                    Queue<Token> tokenQueue = new Queue<Token>();
+
+                    while (HasRequestedTokens(1))
+                    {
+                        currentOffset++;
+                        nextToken = tokens[currentIndex + currentOffset];
+                        if (nextToken.action != LexState.Action.MethodClose)
+                        {
+                            tokenQueue.Enqueue(nextToken);
+                            if (nextToken.action == LexState.Action.MethodOpen)
+                            {
+                                levelsDeep++;
+                            }
+                        }
+                        else
+                        {
+                            if (levelsDeep == 0)
+                            {
+                                currentIndex += currentOffset;
+                                return tokenQueue.ToArray();
+                            }
+                            else
+                            {
+                                tokenQueue.Enqueue(nextToken);
+                                levelsDeep--;
+                            }
+                        }
+                    }
+
+                    Output.WriteError($"Code ended before the end of the function block. (End of file?)");
+                    return null;
+                }
+            }
+            else
+            {
+                Output.WriteError($"Code ended before the end of the function block. (End of file?)");
                 return null;
             }
         }
