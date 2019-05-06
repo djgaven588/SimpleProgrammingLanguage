@@ -10,10 +10,13 @@ namespace BasicProgrammingLanguageMk2
         private static int currentIndex;
         private static Token[] tokens;
         private static Dictionary<string, MethodDefine> definedMethods = new Dictionary<string, MethodDefine>();
+        private static ASTNode rootNode = new ASTNode() { nodeType = ASTNode.NodeType.Root };
+        private static ASTNode currentNode;
 
         public static void BeginInterpret(Token[] tokenIn)
         {
             tokens = tokenIn;
+            currentNode = rootNode;
             for (currentIndex = 0; currentIndex < tokens.Length; currentIndex++)
             {
                 LexState.Action tokenAction = tokens[currentIndex].action;
@@ -41,7 +44,25 @@ namespace BasicProgrammingLanguageMk2
                         break;
                 }
             }
+
+            Output.WriteDebug("Node setup:");
+            WriteOutNode(rootNode, 1);
         }
+
+        private static void WriteOutNode(ASTNode node, int depth)
+        {
+            foreach (ASTNode item in rootNode.nodes)
+            {
+                for (int i = 0; i < depth; i++)
+                {
+                    Output.WriteDebug("--", false);
+                }
+                Output.WriteDebug(item.nodeType.ToString());
+                if(item.nodes != null && item.nodes.Count > 0)
+                    WriteOutNode(item, depth + 1);
+            }
+        }
+
 
         private static bool HasRequestedTokens(int tokenCount)
         {
@@ -64,7 +85,8 @@ namespace BasicProgrammingLanguageMk2
                     }
                     else
                     {
-                        Output.WriteDebug($"Included {find}, this has no functionality yet. System is used by default until a proper solution is created.");
+                        currentNode.usedNamespaces.Add(new UsedNamespace() { namespaceName = find });
+                        Output.WriteDebug($"Included {find}, it has been added to a node.");
                     }
                     break;
                 case "string":
@@ -73,7 +95,8 @@ namespace BasicProgrammingLanguageMk2
                         if (tokens[currentIndex + 1].action == LexState.Action.SpecialPhrase)
                         {
                             string variableName = tokens[currentIndex + 1].data;
-                            Output.WriteDebug($"Variable of type 'string' with name '{variableName}' was declared!");
+                            Output.WriteDebug($"Variable of type 'string' with name '{variableName}' was declared! (Empty contents)");
+                            currentNode.variables.Add(new Variable() { isTemp = false, type = Variable.Type.String, var = null, varName = variableName });
                             currentIndex++;
                         }
                         else
@@ -89,17 +112,17 @@ namespace BasicProgrammingLanguageMk2
 
         private static void OperationProcess(string operation)
         {
-            Output.WriteDebug("Operation " + operation);
+            Output.WriteDebug("Operation " + operation + ". No node added.");
         }
 
         private static void ComparisonProcess(string comparison)
         {
-            Output.WriteDebug("Comparison " + comparison);
+            Output.WriteDebug("Comparison " + comparison + ". No node added.");
         }
 
         private static void EndStatementProcess()
         {
-            Output.WriteDebug("End statement");
+            Output.WriteDebug("End statement" + ". No node change.");
         }
 
         private static void SpecialPhraseProcess(string phrase)
@@ -109,14 +132,18 @@ namespace BasicProgrammingLanguageMk2
             if (parameters == null)
             {
                 //Not a method, but a variable of something.
-                Output.WriteDebug($"The phrase '{find}' is being treated as a name. Continuing...");
+                Variable node = currentNode.FindVariable(find);
+                currentNode.nodes.Add(new ASTVarNode() { var = node, nodeType = ASTNode.NodeType.Id });
+                Output.WriteDebug($"The phrase '{find}' is being treated as a name. Continuing... Added var node.");
             }
             else
             {
                 if (IsMethodDeclare())
                 {
-                    definedMethods.Add(find, new MethodDefine() { methodContents = GetMethodTokens(), paremeters = parameters });
-                    Output.WriteDebug($"The phrase '{find}' is being treated as declaring a method. Not implemented");
+                    MethodDefine method = new MethodDefine() { methodContents = GetMethodTokens(), paremeters = parameters };
+                    definedMethods.Add(find, method);
+                    currentNode.nodes.Add(new ASTMethodNode() { defineMethod = method, nodeType = ASTNode.NodeType.Method });
+                    Output.WriteDebug($"The phrase '{find}' is being treated as declaring a method. Added method node.");
                 }
                 else
                 {
