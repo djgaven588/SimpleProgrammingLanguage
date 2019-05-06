@@ -6,7 +6,7 @@ namespace BasicProgrammingLanguageMk2
 {
     public class MethodDefine
     {
-        public Token[] paremeters;
+        public Variable[] paremeters;
         public Token[] methodContents;
     }
 }

@@ -12,8 +12,8 @@ namespace BasicProgrammingLanguageMk2
         }
 
         public Type type;
-        public object var;
-        public bool isTemp;
         public string varName;
+        public object data;
+        public bool isReference;
     }
 }

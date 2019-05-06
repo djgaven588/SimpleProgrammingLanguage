@@ -6,7 +6,7 @@ namespace BasicProgrammingLanguageMk2
 {
     class Program
     {
-        public const bool TestingMode = false;
+        public static readonly bool TestingMode = false;
 
         static void Main(string[] args)
         {
@@ -20,9 +20,7 @@ namespace BasicProgrammingLanguageMk2
             string sourceCode;
             if (TestingMode == true)
             {
-#pragma warning disable CS0162
                 Output.WriteDebug("Started Test...", "Program", true);
-#pragma warning restore CS0162
                 sourceCode = GetFile("Test.txt");
             }
             else

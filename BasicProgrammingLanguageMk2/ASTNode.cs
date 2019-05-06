@@ -14,7 +14,8 @@ namespace BasicProgrammingLanguageMk2
         {
             Root,
             Id,
-            Method,
+            MethodDefine,
+            MethodCall,
             Int,
             String,
             Operation
@@ -41,10 +42,16 @@ namespace BasicProgrammingLanguageMk2
         public string indentifier;
     }
 
-    public class ASTMethodNode : ASTNode
+    public class ASTMethodDefineNode : ASTNode
     {
         public string name;
         public MethodDefine defineMethod;
+    }
+
+    public class ASTMethodCallNode : ASTNode
+    {
+        public string name;
+        public Variable[] parameters;
     }
 
     public class ASTVarNode : ASTNode

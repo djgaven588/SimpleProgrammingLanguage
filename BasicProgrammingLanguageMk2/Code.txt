@@ -5,4 +5,6 @@ public void WriteToConsole(string input)
 	Console.Write(input);
 }
 
-WriteToConsole("Hello world!");
+string myString = "Hello world!";
+
+WriteToConsole(myString);

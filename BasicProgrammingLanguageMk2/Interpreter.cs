@@ -9,7 +9,7 @@ namespace BasicProgrammingLanguageMk2
 
         private static int currentIndex;
         private static Token[] tokens;
-        private static Dictionary<string, MethodDefine> definedMethods = new Dictionary<string, MethodDefine>();
+        //private static Dictionary<string, MethodDefine> definedMethods = new Dictionary<string, MethodDefine>();
         private static ASTNode rootNode = new ASTNode() { nodeType = ASTNode.NodeType.Root };
         private static ASTNode currentNode;
 
@@ -35,7 +35,7 @@ namespace BasicProgrammingLanguageMk2
                         EndStatementProcess();
                         break;
                     case LexState.Action.SpecialPhrase:
-                        SpecialPhraseProcess(tokens[currentIndex].data);
+                        SpecialPhraseProcess();
                         break;
                     case LexState.Action.Modification:
                         ModificationProcess(tokens[currentIndex].data);
@@ -51,13 +51,40 @@ namespace BasicProgrammingLanguageMk2
 
         private static void WriteOutNode(ASTNode node, int depth)
         {
-            foreach (ASTNode item in rootNode.nodes)
+            string before = new string('-', depth * 2);
+
+            foreach (UsedNamespace item in node.usedNamespaces)
             {
-                for (int i = 0; i < depth; i++)
+                Output.WriteDebug(before + "Included: " + item.namespaceName);
+            }
+
+            foreach (Variable item in node.variables)
+            {
+                Output.WriteDebug(before + "Declared Variables: " + item.varName + ", Type: " + item.type);
+            }
+
+            foreach (ASTNode item in node.nodes)
+            {
+                string parametersForDeclare = "";
+                if (item.nodeType == ASTNode.NodeType.MethodDefine)
                 {
-                    Output.WriteDebug("--", false);
+                    ASTMethodDefineNode methodDefineNode = (ASTMethodDefineNode)item;
+                    parametersForDeclare = " Name: " + methodDefineNode.name + " Required Input: ";
+                    for (int i = 0; i < methodDefineNode.defineMethod.paremeters.Length; i++)
+                    {
+                        parametersForDeclare += "Type: " + methodDefineNode.defineMethod.paremeters[i].type + " ";
+                    }
                 }
-                Output.WriteDebug(item.nodeType.ToString());
+                else if (item.nodeType == ASTNode.NodeType.MethodCall)
+                {
+                    ASTMethodCallNode methodDefineNode = (ASTMethodCallNode)item;
+                    parametersForDeclare = " Name: " + methodDefineNode.name + " " + " Given Input: ";
+                    for (int i = 0; i < methodDefineNode.parameters.Length; i++)
+                    {
+                        parametersForDeclare += "Type: " + methodDefineNode.parameters[i].type + " ";
+                    }
+                }
+                Output.WriteDebug(before + item.nodeType.ToString() + ((item.nodeType == ASTNode.NodeType.MethodDefine || item.nodeType == ASTNode.NodeType.MethodCall) ? parametersForDeclare : ""));
                 if(item.nodes != null && item.nodes.Count > 0)
                     WriteOutNode(item, depth + 1);
             }
@@ -86,7 +113,7 @@ namespace BasicProgrammingLanguageMk2
                     else
                     {
                         currentNode.usedNamespaces.Add(new UsedNamespace() { namespaceName = find });
-                        Output.WriteDebug($"Included {find}, it has been added to a node.");
+                        Output.WriteDebug($"Included {find}, it is now available in current and lower nodes.");
                     }
                     break;
                 case "string":
@@ -95,8 +122,8 @@ namespace BasicProgrammingLanguageMk2
                         if (tokens[currentIndex + 1].action == LexState.Action.SpecialPhrase)
                         {
                             string variableName = tokens[currentIndex + 1].data;
-                            Output.WriteDebug($"Variable of type 'string' with name '{variableName}' was declared! (Empty contents)");
-                            currentNode.variables.Add(new Variable() { isTemp = false, type = Variable.Type.String, var = null, varName = variableName });
+                            Output.WriteDebug($"Variable of type 'string' with name '{variableName}' was declared! It is now available in current and lower nodes. (Empty contents)");
+                            currentNode.variables.Add(new Variable() { type = Variable.Type.String, varName = variableName });
                             currentIndex++;
                         }
                         else
@@ -125,10 +152,10 @@ namespace BasicProgrammingLanguageMk2
             Output.WriteDebug("End statement" + ". No node change.");
         }
 
-        private static void SpecialPhraseProcess(string phrase)
+        private static void SpecialPhraseProcess()
         {
             string find = GetNamespaceOrClass(false);
-            Token[] parameters = GetAllParameters();
+            Variable[] parameters = GetAllParameters();
             if (parameters == null)
             {
                 //Not a method, but a variable of something.
@@ -141,13 +168,16 @@ namespace BasicProgrammingLanguageMk2
                 if (IsMethodDeclare())
                 {
                     MethodDefine method = new MethodDefine() { methodContents = GetMethodTokens(), paremeters = parameters };
-                    definedMethods.Add(find, method);
-                    currentNode.nodes.Add(new ASTMethodNode() { defineMethod = method, nodeType = ASTNode.NodeType.Method });
+                    //definedMethods.Add(find, method);
+                    currentNode.nodes.Add(new ASTMethodDefineNode() { defineMethod = method, nodeType = ASTNode.NodeType.MethodDefine, name = find });
                     Output.WriteDebug($"The phrase '{find}' is being treated as declaring a method. Added method node.");
                 }
                 else
                 {
                     Output.WriteDebug($"The phrase '{find}' is being treated as a method. Continuing...");
+                    ASTMethodCallNode call = new ASTMethodCallNode() { name = find, nodeType = ASTNode.NodeType.MethodCall, parameters = parameters };
+                    currentNode.nodes.Add(call);
+                    /*
                     if (find == "Console.Write")
                     {
                         Output.ProgramOut(parameters[0].data);
@@ -187,6 +217,8 @@ namespace BasicProgrammingLanguageMk2
                     {
                         Output.WriteError($"The method '{find}' is not defined! (Method defined after called?)");
                     }
+                    */
+                    
                 }
             }
         }
@@ -242,7 +274,7 @@ namespace BasicProgrammingLanguageMk2
             }
         }
 
-        private static Token[] GetAllParameters()
+        private static Variable[] GetAllParameters()
         {
             if (HasRequestedTokens(1))
             {
@@ -255,17 +287,32 @@ namespace BasicProgrammingLanguageMk2
                 {
                     int levelsDeep = 0;
                     int currentOffset = 1;
-
-                    Token nextToken = tokens[currentIndex + 1];
-                    Queue<Token> tokenQueue = new Queue<Token>();
+                    Queue<Variable> variableQueue = new Queue<Variable>();
 
                     while (HasRequestedTokens(1))
                     {
                         currentOffset++;
-                        nextToken = tokens[currentIndex + currentOffset];
+                        Token nextToken = tokens[currentIndex + currentOffset];
                         if (nextToken.action != LexState.Action.ParametersClose)
                         {
-                            tokenQueue.Enqueue(nextToken);
+                            Output.WriteDebug(nextToken.action + ", " + nextToken.data);
+                            if (nextToken.action == LexState.Action.SpecialPhrase)
+                            {
+                                Variable foundVariable = currentNode.FindVariable(nextToken.data);
+                                if (foundVariable != null)
+                                {
+                                    variableQueue.Enqueue(new Variable() { isReference = true, type = foundVariable.type, varName = foundVariable.varName });
+                                }
+                                else
+                                {
+                                    Output.WriteError($"The variable '{nextToken.data}' does not exist! (Did you define it?)");
+                                }
+                            }
+                            else
+                            {
+                                Output.WriteError($"GetAllParameters, not setup to handle anything other than special phrase!");
+                            }
+
                             if (nextToken.action == LexState.Action.ParametersOpen)
                             {
                                 levelsDeep++;
@@ -276,11 +323,12 @@ namespace BasicProgrammingLanguageMk2
                             if (levelsDeep == 0)
                             {
                                 currentIndex += currentOffset;
-                                return tokenQueue.ToArray();
+                                return variableQueue.ToArray();
                             }
                             else
                             {
-                                tokenQueue.Enqueue(nextToken);
+                                variableQueue.Enqueue(new Variable() {
+                                    varName = (nextToken.action == LexState.Action.SpecialPhrase) ? null : nextToken.data });
                                 levelsDeep--;
                             }
                         }
@@ -331,13 +379,12 @@ namespace BasicProgrammingLanguageMk2
                     int levelsDeep = 0;
                     int currentOffset = 1;
 
-                    Token nextToken = tokens[currentIndex + 1];
                     Queue<Token> tokenQueue = new Queue<Token>();
 
                     while (HasRequestedTokens(1))
                     {
                         currentOffset++;
-                        nextToken = tokens[currentIndex + currentOffset];
+                        Token nextToken = tokens[currentIndex + currentOffset];
                         if (nextToken.action != LexState.Action.MethodClose)
                         {
                             tokenQueue.Enqueue(nextToken);
